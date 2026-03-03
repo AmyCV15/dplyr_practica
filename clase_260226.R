@@ -273,3 +273,7 @@ vinos %>%
 
 #4. Desafío: ¿En qué combinación de EducationLevel y ResidenceType se observa 
 #el mayor BMI promedio en salud? Muestra el top 5.
+
+
+library(usethis)
+use_git_remote(name = "origin", url = "https://github.com/AmyCV15/dplyr_practica.git", overwrite = TRUE)
