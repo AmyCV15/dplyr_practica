@@ -225,6 +225,51 @@ salud %>%
 head(vinos)
 vinos %>% 
   filter(tipo == "blanco") %>% 
-  arrange(desc(quality), volatile acidity) %>%   ###esto no sale corrígelo 
-  head(10)
-usethis::use_github()
+  arrange(desc(quality)) %>% 
+  arrange(`volatile acidity`) %>% ###el error era por las comillas que no estaba 
+  head(10)                        #agregando
+View(vinos)
+
+## Verbo 4. Mutate
+#Ejercicios 
+#1. Crea una nueva columna en vinos que se llame nivel_alcohol que clasifique 
+#así: - Menos de 10%: "Bajo" · Entre 10% y 12%: "Medio" · Más de 12%: "Alto"
+
+vinos %>% 
+  mutate(
+    nivel_alcohol = case_when(
+      alcohol < 10 ~ "Bajo",
+      alcohol <= 12 ~ "Medio",
+      alcohol > 12 ~ "Alto"
+    )
+  ) %>% 
+  select(tipo, nivel_alcohol, alcohol)
+
+#2. En salud, crea una columna grupo_edad que clasifique a los participantes en:
+ # - Menos de 30: "Joven" · Entre 30–50: "Adulto" · Más de 50: "Mayor"
+#Recuerda manejar los NA como primera condición.
+
+#3. Crea una columna fumador_activo en salud que sea TRUE si el participante 
+#fuma actualmente (SmokingStatus == "Fuma"), FALSE en caso contrario.
+
+
+## Verbo 5. Summarise
+#Ejercicios 
+#1. Calcula el promedio de alcohol, pH y calidad para cada combinación de 
+#tipo y categoria de vino.
+vinos %>% 
+  group_by(tipo) %>%                      ###HACE FALTA CATEGORIA  ??
+    summarise(
+      n = n(),
+      media_alcohol = round(mean(alcohol), 3),
+      media_pH = round(mean(pH), 3),
+      media_calidad = round(mean(quality), 3)
+    )
+
+#2. ¿Qué estado civil del dataset salud tiene el nivel de estrés más alto en 
+#promedio? Muestra el top 3.
+
+#3. Calcula el promedio de glucosa y colesterol por estatus de tabaquismo en salud.
+
+#4. Desafío: ¿En qué combinación de EducationLevel y ResidenceType se observa 
+#el mayor BMI promedio en salud? Muestra el top 5.
