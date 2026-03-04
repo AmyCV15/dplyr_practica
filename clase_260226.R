@@ -249,31 +249,156 @@ vinos %>%
  # - Menos de 30: "Joven" · Entre 30–50: "Adulto" · Más de 50: "Mayor"
 #Recuerda manejar los NA como primera condición.
 
+salud %>% 
+  mutate(
+    grupo_edad = case_when(
+      is.na(Age) ~ "Sin dato",
+      Age <= 30 ~ "Joven",
+      Age <= 50 ~ "Adulto",
+      Age > 50 ~ "Mayor",
+    )
+  ) %>% 
+  arrange(grupo_edad) %>% 
+  select(ID, Age, grupo_edad)
+
+dim(salud)  
+
 #3. Crea una columna fumador_activo en salud que sea TRUE si el participante 
 #fuma actualmente (SmokingStatus == "Fuma"), FALSE en caso contrario.
+salud$SmokingStatus
+salud %>% 
+  filter(!is.na(SmokingStatus)) %>% 
+  mutate(
+    fumador_activo = ifelse(SmokingStatus == "Fuma", "TRUE", "FALSE")
+  ) %>% 
+  select(SmokingStatus, ID, Age, fumador_activo, BloodPressure, HeartRate)
 
 
 ## Verbo 5. Summarise
 #Ejercicios 
 #1. Calcula el promedio de alcohol, pH y calidad para cada combinación de 
 #tipo y categoria de vino.
+
+#primero agregar la columna categoría 
+vinos <- vinos %>% 
+  mutate(
+    categoria = case_when(
+      quality <= 4 ~ "Baja",
+      quality <= 6 ~ "Media",
+      quality <= 8 ~ "Alta",
+      TRUE         ~ "Excepcional"   # TRUE actúa como "else"
+    )
+  )
 vinos %>% 
-  group_by(tipo) %>%                      ###HACE FALTA CATEGORIA  ??
+  group_by(tipo, categoria) %>%                      ###HACE FALTA CATEGORIA  ??
     summarise(
       n = n(),
       media_alcohol = round(mean(alcohol), 3),
       media_pH = round(mean(pH), 3),
-      media_calidad = round(mean(quality), 3)
+      media_calidad = round(mean(quality), 3),
+      .groups       = "drop" 
     )
 
 #2. ¿Qué estado civil del dataset salud tiene el nivel de estrés más alto en 
 #promedio? Muestra el top 3.
 
+salud %>% 
+  filter(!is.na(MaritalStatus), !is.na(StressLevel)) %>% 
+  group_by(MaritalStatus) %>% 
+  summarise(
+    n = n(),
+    promedio_estres = round(mean(StressLevel)),
+    .groups       = "drop"
+  ) %>% 
+  arrange(desc(promedio_estres)) %>% 
+  head(3)
+  
+
 #3. Calcula el promedio de glucosa y colesterol por estatus de tabaquismo en salud.
+
+salud %>% 
+  filter(!is.na(Glucose), !is.na(Cholesterol), !is.na(SmokingStatus)) %>% 
+  group_by(SmokingStatus) %>% 
+  summarise(
+    promedio_glucosa = round(mean(Glucose), 3),
+    promedio_colesterol = round(mean(Cholesterol), 3),
+    .groups       = "drop"
+  )
 
 #4. Desafío: ¿En qué combinación de EducationLevel y ResidenceType se observa 
 #el mayor BMI promedio en salud? Muestra el top 5.
 
+salud %>% 
+  filter(!is.na(EducationLevel), !is.na(ResidenceType)) %>% 
+  group_by(EducationLevel, ResidenceType) %>% 
+  summarise(
+    n             = n(),
+    media_imc     = round(mean(BMI, na.rm = TRUE), 3),
+    .groups       = "drop"                            ##recuerda usar na.rm 
+  ) %>%                                               #para evitarte estar filtrando a cada rato...!
+  arrange(desc(media_imc)) %>% 
+  head(5)
 
+
+### Verbo 6. ###
+#Ejercicios 
+#1. Construye una tabla resumen_educacion con el BMI promedio y nivel de estrés promedio 
+#por EducationLevel. Luego usa left_join() para agregarla al dataset salud. 
+#¿Cuántas filas tiene el resultado?
+
+resumen_educacion <- salud %>% 
+  filter(!is.na(EducationLevel)) %>% 
+  group_by(EducationLevel) %>% 
+  summarise(
+    promedio_IMC = round(mean(BMI, na.rm = TRUE), 3),
+    promedio_estres = round(mean(StressLevel, na.rm = TRUE), 3),
+    .groups = "drop"
+  )
+resumen_educacion 
+View(left_join(salud, resumen_educacion, by = "EducationLevel")) #se agregan sin haberse agrupado
+union_salud1 <- left_join(salud, resumen_educacion, by = "EducationLevel")
+#mismas filas 
+nrow(union_salud1)
+union_salud1$EducationLevel ##=???? por qué me deja un NA?
+
+#2. ¿Existen niveles educativos en resumen_educacion que no aparezcan en salud? 
+#Usa anti_join() para verificarlo.
+View(anti_join(salud, resumen_educacion, by = "EducationLevel"))
+#Claaaro porque tiene NA en nivel de educación
+
+#3. Usando left_join(), combina salud con resumen_zona y luego muestra el BMI 
+#promedio por ResidenceType, comparándolo con el imc_promedio_zona calculado en el resumen
+
+#copiando script para obtener objeto resumen zona 
+resumen_zona <- salud |>
+  group_by(ResidenceType) |>
+  summarise(
+    imc_promedio_zona        = round(mean(BMI, na.rm = TRUE), 1),
+    colesterol_promedio_zona = round(mean(Cholesterol, na.rm = TRUE), 1),
+    n_en_zona                = n(),
+    .groups                  = "drop"
+  )
+
+resumen_zona
+salud %>% 
+  left_join(resumen_zona, by = "ResidenceType") %>% 
+  group_by(ResidenceType) %>% 
+summarise(
+  promedio_imc_total = round(mean(BMI), 3),
+  imc_promedio_zona_2 = imc_promedio_zona,
+  .groups = "drop"
+)
+ #no entendía este ejercicio. ############## REVISAR ########
+
+
+
+
+
+
+
+###### para poder subirlo a mi repositorio "clonado" de Github ###########
 library(usethis)
 use_git_remote(name = "origin", url = "https://github.com/AmyCV15/dplyr_practica.git", overwrite = TRUE)
+##########################################################################
+
+
