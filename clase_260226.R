@@ -290,7 +290,7 @@ vinos <- vinos %>%
     )
   )
 vinos %>% 
-  group_by(tipo, categoria) %>%                      ###HACE FALTA CATEGORIA  ??
+  group_by(tipo, categoria) %>%                     
     summarise(
       n = n(),
       media_alcohol = round(mean(alcohol), 3),
@@ -360,6 +360,8 @@ union_salud1 <- left_join(salud, resumen_educacion, by = "EducationLevel")
 #mismas filas 
 nrow(union_salud1)
 union_salud1$EducationLevel ##=???? por qué me deja un NA?
+#####################################################################################################
+
 
 #2. ¿Existen niveles educativos en resumen_educacion que no aparezcan en salud? 
 #Usa anti_join() para verificarlo.
@@ -381,20 +383,102 @@ resumen_zona <- salud |>
 
 resumen_zona
 salud %>% 
-  left_join(resumen_zona, by = "ResidenceType") %>% 
+  left_join(resumen_zona, by = "ResidenceType")  %>% 
   group_by(ResidenceType) %>% 
-summarise(
+  summarise(
   promedio_imc_total = round(mean(BMI), 3),
   imc_promedio_zona_2 = imc_promedio_zona,
   .groups = "drop"
 )
- #no entendía este ejercicio. ############## REVISAR ########
+ #no entendí este ejercicio. ############## REVISAR #####################################################
+
+
+### preguntas para clase:
+#por qué en 11.3 se muestran 5 en lugar de 3? 
+# Los 3 vinos con mayor calidad de cada tipo
+vinos |>
+  group_by(tipo) |>
+  slice_max(quality, n = 3) |>
+  select(tipo, quality, alcohol) |>
+  arrange(tipo, desc(quality))
+#####################################################################################################
+
+### 11. 4 across() <-  este está buenísimo 
+vinos |>
+  group_by(tipo) |>
+  summarise(
+    across(c(quality, alcohol, pH), ~ round(mean(.x), 2)),
+    .groups = "drop"
+  )
+# Media de TODAS las columnas numéricas de salud por estatus de tabaquismo
+salud |>
+  filter(!is.na(SmokingStatus)) |>
+  group_by(SmokingStatus) |>
+  summarise(
+    across(where(is.numeric), ~ round(mean(.x, na.rm = TRUE), 1)),
+    .groups = "drop"
+  ) |>
+  select(SmokingStatus, Age, BMI, Cholesterol, BloodPressure, Glucose)
 
 
 
+### Ejercicio Integrador ####
 
+#A) ¿Cuál es el promedio de calidad de los vinos blancos de categoría “Alta” o 
+#“Excepcional”, agrupado por nivel de alcohol (nivel_alcohol)?
 
-
+#agregamos columnas de nivel de alcohol y categoria de calidad
+vinos_integrador <-  vinos %>% 
+  mutate(
+    nivel_alcohol = case_when(
+      alcohol < 10 ~ "Bajo",
+      alcohol <= 12 ~ "Medio",
+      alcohol > 12 ~ "Alto"
+    )
+  ) %>% 
+  mutate(
+    categoria = case_when(
+      quality <= 4 ~ "Baja",
+      quality <= 6 ~ "Media",
+      quality <= 8 ~ "Alta",
+      TRUE         ~ "Excepcional"   
+    )
+  ) %>% 
+  select(tipo, alcohol, quality, nivel_alcohol, categoria)
+#respondemos pregunta
+vinos_integrador %>% 
+  filter(tipo == "blanco" & categoria %in% c("Alta", "Excepcional")) %>% 
+  group_by(nivel_alcohol) %>% 
+  summarise(
+    n = n(),
+    promedio_calidad = round(mean(quality, na.rm = TRUE), 3)
+  )
+#########################################################################################################  
+#B) En el dataset salud, ¿qué 5 participantes tienen la mayor diferencia entre 
+#su BMI y el BMI promedio de su grupo educativo? Muestra su ID, nivel educativo, 
+#BMI individual y la diferencia.
+salud$EducationLevel
+salud %>% 
+  filter(!is.na(EducationLevel), !is.na(BMI)) %>% 
+  group_by(EducationLevel) %>% 
+  summarise(
+    n = n(),
+    promedio_BMI = round(mean(BMI, na.rm = TRUE), 3),
+    diferencia = BMI - promedio_BMI,
+    .groups = "drop"
+  )
+#pues esto no funciona en realiad
+salud %>% 
+  filter(!is.na(EducationLevel), !is.na(BMI)) %>% 
+  group_by(EducationLevel) %>% 
+  mutate(
+    promedio_BMI = round(mean(BMI, na.rm = TRUE), 3),
+    diferencia = BMI - promedio_BMI,
+  ) %>% 
+  ungroup() %>% #por que tengo que desagrupar para que ahora sí me los agrupen?? 
+  slice_max(diferencia, n = 5) %>% 
+  select(ID, EducationLevel, BMI, diferencia)
+#############################################################################################################33
 
 ###### para poder subirlo a mi repositorio "clonado" de Github ###########
 library(usethis)
