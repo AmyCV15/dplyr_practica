@@ -238,9 +238,9 @@ View(vinos)
 vinos %>% 
   mutate(
     nivel_alcohol = case_when(
-      alcohol < 10 ~ "Bajo",
-      alcohol <= 12 ~ "Medio",
-      alcohol > 12 ~ "Alto"
+      alcohol < 10 ~ "Bajo",        ###modificaciones por clase:
+      alcohol <= 12 ~ "Medio",      #recuerda poner is.na(alcohol) ~ "sin dato"
+      alcohol > 12 ~ "Alto"         #poner entre parentesis para poder usar el &
     )
   ) %>% 
   select(tipo, nivel_alcohol, alcohol)
@@ -295,8 +295,8 @@ vinos %>%
       n = n(),
       media_alcohol = round(mean(alcohol), 3),
       media_pH = round(mean(pH), 3),
-      media_calidad = round(mean(quality), 3),
-      .groups       = "drop" 
+      media_calidad = round(mean(quality), 3)
+      
     )
 
 #2. ¿Qué estado civil del dataset salud tiene el nivel de estrés más alto en 
@@ -401,7 +401,8 @@ vinos |>
   slice_max(quality, n = 3) |>
   select(tipo, quality, alcohol) |>
   arrange(tipo, desc(quality))
-#####################################################################################################
+
+##### te muestra el ranking de todos los empates. hay 4 calidades 9, 4 calidades 8 y así...
 
 ### 11. 4 across() <-  este está buenísimo 
 vinos |>
@@ -479,6 +480,19 @@ salud %>%
   slice_max(diferencia, n = 5) %>% 
   select(ID, EducationLevel, BMI, diferencia)
 #############################################################################################################33
+#esta es la verdadera solucion a lo que el ejercicio esrá solicitando :)
+salud %>% 
+  filter(!is.na(EducationLevel), !is.na(BMI)) %>% 
+  group_by(EducationLevel) %>% 
+  mutate(
+    promedio_BMI = round(mean(BMI, na.rm = TRUE), 3),
+    diferencia = BMI - promedio_BMI,
+  ) %>% 
+  slice_max(diferencia, n = 5) %>% 
+  select(ID, EducationLevel, BMI, diferencia)
+
+
+
 
 ###### para poder subirlo a mi repositorio "clonado" de Github ###########
 library(usethis)
