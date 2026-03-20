@@ -1,7 +1,7 @@
 ###practica de Tidyverse ####
 #clase del 260225 #
 
-#Liberías necesarias para trabajar 
+#Liberías necesarias para trabajar en esta practica
 # Cargamos lo que usaremos en todo el tutorial
 library(dplyr)
 library(readr)
@@ -27,7 +27,7 @@ glimpse(vinos)
 salud <- read_csv("01_RawData/dataset_categorical_NA.csv", show_col_types = FALSE)
 glimpse(salud)
 
-#probando las ventajas de pipe
+#probando las ventajas de pipe ##
 vinos |>
   filter(tipo == "tinto") |>
   filter(quality >= 7) |>
